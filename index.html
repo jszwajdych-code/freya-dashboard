@@ -1010,7 +1010,7 @@
     const btn = document.getElementById('refreshBtn');
     btn.classList.add('loading');
     document.getElementById('refresh-icon').textContent = '⟳';
-    await Promise.all([loadVitals(), loadFlights(), loadHealth(), loadMails(), loadArticles(), generatePrasowka()]);
+    await Promise.all([loadVitals(), loadFlights(), loadHealth(), loadMails()]);
     btn.classList.remove('loading');
     document.getElementById('refresh-icon').textContent = '↻';
     document.getElementById('updated').textContent = 'Odświeżono: ' +
@@ -1020,6 +1020,7 @@
   setInterval(updateClock, 1000);
   updateClock();
   loadAll();
+  generatePrasowka(); // prasówka ładuje się raz przy starcie, potem tylko przez przycisk ↻ Odśwież
   setInterval(loadAll, 5 * 60 * 1000);
 </script>
 </body>
