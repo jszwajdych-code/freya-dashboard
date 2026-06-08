@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FREYA — Widget</title>
+<style>
+  :root {
+    --bg: #f4f6fb; --card: #ffffff; --ink: #1a2235; --muted: #8a93a8;
+    --blue: #2f6df0; --green: #1ea672; --amber: #d98b16; --red: #d8453a; --line: #e6eaf2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: var(--bg); font-family: -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .wrap { padding: 14px; display: flex; flex-direction: column; gap: 9px; min-height: 100vh; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; }
+  .brand { font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--blue); }
+  .time { font-size: 11px; color: var(--muted); }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; }
+  .tile .ico { font-size: 20px; line-height: 1; }
+  .tile .body { flex: 1; min-width: 0; }
+  .tile .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; }
+  .tile .value { font-size: 17px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .v-green { color: var(--green); } .v-amber { color: var(--amber); } .v-red { color: var(--red); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="brand">FREYA</div>
+    <div class="time" id="time">--:--</div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">🦘</div>
+    <div class="body">
+      <div class="label">Worek — ostatnia zmiana</div>
+      <div class="value" id="bag">ładowanie…</div>
+    </div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">🔵</div>
+    <div class="body">
+      <div class="label">Rybelsus</div>
+      <div class="value" id="ryb">ładowanie…</div>
+    </div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">💊</div>
+    <div class="body">
+      <div class="label">Tabletki (cholesterol)</div>
+      <div class="value" id="chol">ładowanie…</div>
+    </div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">🍴</div>
+    <div class="body">
+      <div class="label">Ostatni posiłek</div>
+      <div class="value" id="meal">ładowanie…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SB_URL = 'https://hsblsqbvujmdrpcncimd.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzYmxzcWJ2dWptZHJwY25jaW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDU5NzgsImV4cCI6MjA4MDQyMTk3OH0.0QnK1cyie7Q5n1rEshZ_VZsV3Y55jaALJZUOA6kO7Oc';   // <-- wklej anon key z Supabase (ten sam co w dashboardzie)
+
+  async function sb(table, query) {
+    const res = await fetch(SB_URL + '/rest/v1/' + table + '?' + query, {
+      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+  function hoursAgo(d) { if (!d) return 9999; return (Date.now() - new Date(d)) / 3600000; }
+  function fmtAgo(h) {
+    if (h > 9990) return 'brak danych';
+    if (h < 1) return Math.round(h * 60) + ' min temu';
+    if (h < 48) return Math.round(h) + 'h temu';
+    return Math.round(h / 24) + ' dni temu';
+  }
+  function setTile(id, h, warn, err) {
+    const el = document.getElementById(id);
+    el.textContent = fmtAgo(h);
+    el.className = 'value ' + (h >= err ? 'v-red' : h >= warn ? 'v-amber' : 'v-green');
+  }
+
+  async function loadEvent(table, query, id, warn, err) {
+    try {
+      const r = await sb(table, query);
+      const ts = r[0]?.event_time || r[0]?.created_at;
+      setTile(id, hoursAgo(ts), warn, err);
+    } catch(e) { document.getElementById(id).textContent = 'błąd'; }
+  }
+
+  function strefaSkrot() {
+    try {
+      const parts = new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', timeZoneName: 'short' })
+        .formatToParts(new Date());
+      const tz = parts.find(p => p.type === 'timeZoneName');
+      return tz ? tz.value : '';
+    } catch(e) { return ''; }
+  }
+
+  async function load() {
+    const godz = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('time').textContent = (godz + ' ' + strefaSkrot()).trim();
+
+    // progi z eskalacji: worek 48/60, rybelsus 16/22, cholesterol 23/29, posiłek 4/6
+    loadEvent('life_events', 'select=event_time&event_type=eq.ostomy_bag_changed&order=event_time.desc&limit=1', 'bag', 48, 60);
+    loadEvent('life_events', 'select=event_time&event_type=eq.rybelsus_taken&order=event_time.desc&limit=1', 'ryb', 16, 22);
+    loadEvent('life_events', 'select=event_time&event_type=eq.cholesterol_med_taken&order=event_time.desc&limit=1', 'chol', 23, 29);
+    loadEvent('meal_log', 'select=created_at&order=created_at.desc&limit=1', 'meal', 4, 6);
+  }
+
+  load();
+  setInterval(load, 5 * 60 * 1000);
+</script>
+</body>
+</html>
