@@ -743,12 +743,13 @@
 
       let html = '';
 
-      if (upcoming.length === 0 && completed.length > 0) {
-        html += '<div class="flight-completed-label">— Zrealizowane —</div>';
+      if (upcoming.length === 0) {
+        c.innerHTML = '<div class="flight-empty">Brak nadchodzących lotów</div>';
+        return;
       }
 
-      const all = upcoming.length > 0 ? upcoming : completed.slice(0, 3);
-      const isCompleted = upcoming.length === 0;
+      const all = upcoming;
+      const isCompleted = false;
 
       html += all.map(f => {
         const time = (f.departure_time || '').substring(0, 5);
@@ -827,21 +828,23 @@
   // HEALTH CHECK
   async function loadHealth() {
     try {
-      const [reminders, logs] = await Promise.all([
+      const [reminders, logs, mails] = await Promise.all([
         sb('freya_reminders', 'select=event_type,sent_at&order=sent_at.desc&limit=1'),
-        sb('freya_logs', 'select=workflow_name,executed_at,status&order=executed_at.desc&limit=1')
+        sb('freya_logs', 'select=workflow_name,executed_at,status&order=executed_at.desc&limit=1'),
+        sb('freya_mails', 'select=received_at&order=received_at.desc&limit=1')
       ]);
 
       const rH = hoursAgo(reminders[0]?.sent_at);
       const lH = hoursAgo(logs[0]?.executed_at);
+      const mH = hoursAgo(mails[0]?.received_at);
 
       const checks = [
         { label: 'Freya Przypomnienia', icon: '🔔', h: rH, w: 25, e: 30,
           detail: reminders[0] ? fmtH(rH) + ' temu' : 'brak danych' },
         { label: 'Freya Logger', icon: '📋', h: lH, w: 25, e: 48,
           detail: logs[0] ? fmtH(lH) + ' temu' : 'brak danych' },
-        { label: 'Mail Ogarniaczka', icon: '📧', h: hoursAgo(null), w: 25, e: 48,
-          detail: 'aktywna (Gmail Trigger)' }
+        { label: 'Mail Ogarniaczka', icon: '📧', h: mH, w: 48, e: 96,
+          detail: mails[0] ? 'ostatni ' + fmtH(mH) + ' temu' : 'brak maili' }
       ];
 
       let hasError = false, hasWarn = false;
