@@ -20,8 +20,8 @@
   .tile .body { flex: 1; min-width: 0; }
   .tile .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; }
   .tile .value { font-size: 17px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .v-green { color: var(--green); } .v-amber { color: var(--amber); } .v-red { color: var(--red); }
   .tile .sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .v-green { color: var(--green); } .v-amber { color: var(--amber); } .v-red { color: var(--red); }
   .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .dot.ok { background: var(--green); } .dot.warn { background: var(--amber); } .dot.err { background: var(--red); }
 </style>
@@ -33,76 +33,36 @@
     <div class="time" id="time">--:--</div>
   </div>
 
-  <div class="tile">
-    <div class="ico">🦘</div>
-    <div class="body">
-      <div class="label">Worek — ostatnia zmiana</div>
-      <div class="value" id="bag">ładowanie…</div>
-    </div>
-  </div>
-
-  <div class="tile">
-    <div class="ico">🔵</div>
-    <div class="body">
-      <div class="label">Rybelsus</div>
-      <div class="value" id="ryb">ładowanie…</div>
-    </div>
-  </div>
-
-  <div class="tile">
-    <div class="ico">💊</div>
-    <div class="body">
-      <div class="label">Tabletki (cholesterol)</div>
-      <div class="value" id="chol">ładowanie…</div>
-    </div>
-  </div>
-
-  <div class="tile">
-    <div class="ico">🍴</div>
-    <div class="body">
-      <div class="label">Ostatni posiłek</div>
-      <div class="value" id="meal">ładowanie…</div>
-    </div>
-  </div>
-
-  <div class="tile">
-    <div class="ico">❤️</div>
-    <div class="body">
-      <div class="label">Ciśnienie — ostatni pomiar</div>
-      <div class="value" id="bp">ładowanie…</div>
-      <div class="sub" id="bp-sub"></div>
-    </div>
-  </div>
-
-  <div class="tile">
-    <div class="ico">🏋️</div>
-    <div class="body">
-      <div class="label">Ćwiczenia dziś</div>
-      <div class="value" id="cwicz">ładowanie…</div>
-    </div>
-  </div>
-
-  <div class="tile">
-    <div class="ico">🔧</div>
-    <div class="body">
-      <div class="label">Stan systemu</div>
-      <div class="value" id="sys">ładowanie…</div>
-    </div>
-    <div class="dot" id="sys-dot"></div>
-  </div>
+  <div class="tile"><div class="ico">🦘</div><div class="body"><div class="label">Worek — ostatnia zmiana</div><div class="value" id="bag">ładowanie…</div></div></div>
+  <div class="tile"><div class="ico">🔵</div><div class="body"><div class="label">Rybelsus</div><div class="value" id="ryb">ładowanie…</div></div></div>
+  <div class="tile"><div class="ico">💊</div><div class="body"><div class="label">Tabletki (cholesterol)</div><div class="value" id="chol">ładowanie…</div></div></div>
+  <div class="tile"><div class="ico">🍴</div><div class="body"><div class="label">Ostatni posiłek</div><div class="value" id="meal">ładowanie…</div></div></div>
+  <div class="tile"><div class="ico">❤️</div><div class="body"><div class="label">Ciśnienie — ostatni pomiar</div><div class="value" id="bp">ładowanie…</div><div class="sub" id="bp-sub"></div></div></div>
+  <div class="tile"><div class="ico">🏋️</div><div class="body"><div class="label">Ćwiczenia dziś</div><div class="value" id="cwicz">ładowanie…</div></div></div>
+  <div class="tile"><div class="ico">🔧</div><div class="body"><div class="label">Stan systemu</div><div class="value" id="sys">ładowanie…</div></div><div class="dot" id="sys-dot"></div></div>
 </div>
 
 <script>
-  const SB_URL = 'https://hsblsqbvujmdrpcncimd.supabase.co';
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzYmxzcWJ2dWptZHJwY25jaW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDU5NzgsImV4cCI6MjA4MDQyMTk3OH0.0QnK1cyie7Q5n1rEshZ_VZsV3Y55jaALJZUOA6kO7Oc';   // <-- wklej anon key z Supabase (ten sam co w dashboardzie)
+  var SB_URL = 'https://hsblsqbvujmdrpcncimd.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzYmxzcWJ2dWptZHJwY25jaW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDU5NzgsImV4cCI6MjA4MDQyMTk3OH0.0QnK1cyie7Q5n1rEshZ_VZsV3Y55jaALJZUOA6kO7Oc';
 
-  async function sb(table, query) {
-    const res = await fetch(SB_URL + '/rest/v1/' + table + '?' + query, {
-      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY }
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return res.json();
+  function sb(table, query, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', SB_URL + '/rest/v1/' + table + '?' + query, true);
+    xhr.setRequestHeader('apikey', SB_KEY);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + SB_KEY);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try { cb(null, JSON.parse(xhr.responseText)); }
+          catch (e) { cb(e); }
+        } else { cb(new Error('HTTP ' + xhr.status)); }
+      }
+    };
+    xhr.onerror = function() { cb(new Error('network')); };
+    xhr.send();
   }
+
   function hoursAgo(d) { if (!d) return 9999; return (Date.now() - new Date(d)) / 3600000; }
   function fmtAgo(h) {
     if (h > 9990) return 'brak danych';
@@ -110,80 +70,64 @@
     if (h < 48) return Math.round(h) + 'h temu';
     return Math.round(h / 24) + ' dni temu';
   }
+  function setText(id, txt) { var el = document.getElementById(id); if (el) el.textContent = txt; }
   function setTile(id, h, warn, err) {
-    const el = document.getElementById(id);
+    var el = document.getElementById(id);
+    if (!el) return;
     el.textContent = fmtAgo(h);
-    el.className = 'value ' + (h >= err ? 'v-red' : h >= warn ? 'v-amber' : 'v-green');
+    el.className = 'value ' + (h >= err ? 'v-red' : (h >= warn ? 'v-amber' : 'v-green'));
   }
 
-  async function loadEvent(table, query, id, warn, err) {
-    try {
-      const r = await sb(table, query);
-      const ts = r[0]?.event_time || r[0]?.created_at;
+  function loadEvent(table, query, id, warn, err) {
+    sb(table, query, function(e, r) {
+      if (e) { setText(id, 'błąd'); return; }
+      var ts = (r[0] && (r[0].event_time || r[0].created_at)) || null;
       setTile(id, hoursAgo(ts), warn, err);
-    } catch(e) { document.getElementById(id).textContent = 'błąd'; }
+    });
   }
 
-  function strefaSkrot() {
-    try {
-      const parts = new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', timeZoneName: 'short' })
-        .formatToParts(new Date());
-      const tz = parts.find(p => p.type === 'timeZoneName');
-      return tz ? tz.value : '';
-    } catch(e) { return ''; }
+  function todayWarsaw() {
+    var d = new Date(Date.now() + 2 * 3600 * 1000);
+    return d.toISOString().slice(0, 10);
   }
 
-  async function load() {
-    const godz = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('time').textContent = (godz + ' ' + strefaSkrot()).trim();
+  function load() {
+    var now = new Date();
+    var hh = now.getHours(); if (hh < 10) hh = '0' + hh;
+    var mm = now.getMinutes(); if (mm < 10) mm = '0' + mm;
+    setText('time', hh + ':' + mm);
 
-    // progi z eskalacji: worek 48/60, rybelsus 16/22, cholesterol 23/29, posiłek 4/6
     loadEvent('life_events', 'select=event_time&event_type=eq.ostomy_bag_changed&order=event_time.desc&limit=1', 'bag', 48, 60);
     loadEvent('life_events', 'select=event_time&event_type=eq.rybelsus_taken&order=event_time.desc&limit=1', 'ryb', 16, 22);
     loadEvent('life_events', 'select=event_time&event_type=eq.cholesterol_med_taken&order=event_time.desc&limit=1', 'chol', 23, 29);
     loadEvent('meal_log', 'select=created_at&order=created_at.desc&limit=1', 'meal', 4, 6);
 
-    // Ciśnienie — pokazuje wartość z metadata + jak dawno
-    try {
-      const bp = await sb('life_events',
-        'select=event_time,metadata&event_type=eq.blood_pressure_measured&order=event_time.desc&limit=1');
+    sb('life_events', 'select=event_time,metadata&event_type=eq.blood_pressure_measured&order=event_time.desc&limit=1', function(e, bp) {
+      if (e) { setText('bp', 'błąd'); return; }
       if (bp[0]) {
-        const m = bp[0].metadata || {};
-        const sys = m.systolic, dia = m.diastolic, puls = m.pulse;
-        document.getElementById('bp').textContent =
-          (sys && dia) ? `${sys}/${dia}` : '—';
-        const ago = fmtAgo(hoursAgo(bp[0].event_time));
-        document.getElementById('bp-sub').textContent =
-          (puls ? `puls ${puls} · ` : '') + ago;
-      } else {
-        document.getElementById('bp').textContent = 'brak danych';
-      }
-    } catch(e) { document.getElementById('bp').textContent = 'błąd'; }
+        var m = bp[0].metadata || {};
+        setText('bp', (m.systolic && m.diastolic) ? (m.systolic + '/' + m.diastolic) : '—');
+        var ago = fmtAgo(hoursAgo(bp[0].event_time));
+        setText('bp-sub', (m.pulse ? ('puls ' + m.pulse + ' · ') : '') + ago);
+      } else { setText('bp', 'brak danych'); }
+    });
 
-    // Ćwiczenia dziś — suma przysiadów i brzuszków
-    try {
-      const dzis = new Date(Date.now() + 2*3600*1000).toISOString().slice(0,10);
-      const ex = await sb('freya_exercise_log',
-        'select=exercise_type,reps&exercise_date=eq.' + dzis);
-      const sumy = { przysiady: 0, brzuszki: 0 };
-      for (const r of ex) {
-        if (sumy[r.exercise_type] !== undefined) sumy[r.exercise_type] += (r.reps || 0);
+    sb('freya_exercise_log', 'select=exercise_type,reps&exercise_date=eq.' + todayWarsaw(), function(e, ex) {
+      if (e) { setText('cwicz', 'błąd'); return; }
+      var p = 0, b = 0, i;
+      for (i = 0; i < ex.length; i++) {
+        if (ex[i].exercise_type === 'przysiady') p += (ex[i].reps || 0);
+        if (ex[i].exercise_type === 'brzuszki') b += (ex[i].reps || 0);
       }
-      document.getElementById('cwicz').textContent =
-        `🦵 ${sumy.przysiady}/100  🔥 ${sumy.brzuszki}/100`;
-    } catch(e) { document.getElementById('cwicz').textContent = 'błąd'; }
+      setText('cwicz', '🦵 ' + p + '/100  🔥 ' + b + '/100');
+    });
 
-    // Stan systemu — ostatni log
-    try {
-      const l = await sb('freya_logs', 'select=executed_at&order=executed_at.desc&limit=1');
-      const h = hoursAgo(l[0]?.executed_at);
-      document.getElementById('sys').textContent =
-        h > 9990 ? 'brak danych' : 'OK · ' + fmtAgo(h);
-      document.getElementById('sys-dot').className = 'dot ' + (h > 9990 ? 'err' : h >= 6 ? 'warn' : 'ok');
-    } catch(e) {
-      document.getElementById('sys').textContent = 'błąd';
-      document.getElementById('sys-dot').className = 'dot err';
-    }
+    sb('freya_logs', 'select=executed_at&order=executed_at.desc&limit=1', function(e, l) {
+      if (e) { setText('sys', 'błąd'); document.getElementById('sys-dot').className = 'dot err'; return; }
+      var h = hoursAgo(l[0] && l[0].executed_at);
+      setText('sys', h > 9990 ? 'brak danych' : ('OK · ' + fmtAgo(h)));
+      document.getElementById('sys-dot').className = 'dot ' + (h > 9990 ? 'err' : (h >= 6 ? 'warn' : 'ok'));
+    });
   }
 
   load();
