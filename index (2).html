@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JFKGLab / FREYA</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f2f7;
+    --surface: #ffffff;
+    --surface2: #f7f8fc;
+    --border: #e4e8f0;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --green-border: #86efac;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --red-border: #fca5a5;
+    --yellow: #d97706;
+    --yellow-light: #fef3c7;
+    --blue: #2563eb;
+    --blue-light: #dbeafe;
+    --muted: #94a3b8;
+    --text: #111827;
+    --text-2: #374151;
+    --text-3: #6b7280;
+    --text-4: #9ca3af;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --radius: 12px;
+    --font: 'Inter', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  /* TOP BAR */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  .topbar-left .brand { color: var(--text); font-weight: 700; }
+  .topbar-left .sep { color: var(--border); }
+  .topbar-left .page { color: var(--text-2); }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .clock {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .updated {
+    font-size: 12px;
+    color: var(--text-4);
+  }
+
+  .btn-refresh {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+  }
+
+  .btn-refresh:hover { background: #1d4ed8; }
+  .btn-refresh.loading { background: var(--muted); cursor: wait; }
+
+  /* LAYOUT */
+  .layout {
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .row { display: grid; gap: 20px; }
+  .row-2 { grid-template-columns: 1fr 1fr; }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-head-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-2);
+  }
+
+  .card-head-right {
+    font-size: 12px;
+    color: var(--text-4);
+    font-weight: 500;
+  }
+
+  .card-body { padding: 18px 20px; }
+
+  /* VITALS GRID */
+  .vitals-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .vital {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .vital::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+
+  .vital.ok::before { background: var(--green); }
+  .vital.warn::before { background: var(--yellow); }
+  .vital.error::before { background: var(--red); }
+  .vital.nodata::before { background: var(--muted); }
+
+  .vital-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .vital-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .vital-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .vital-badge.ok { background: var(--green-light); color: var(--green); }
+  .vital-badge.warn { background: var(--yellow-light); color: var(--yellow); }
+  .vital-badge.error { background: var(--red-light); color: var(--red); }
+  .vital-badge.nodata { background: var(--surface2); color: var(--muted); }
+
+  .vital-value {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 3px;
+    letter-spacing: -1px;
+  }
+
+  .vital.ok .vital-value { color: var(--green); }
+  .vital.warn .vital-value { color: var(--yellow); }
+  .vital.error .vital-value { color: var(--red); }
+  .vital.nodata .vital-value { color: var(--muted); }
+
+  .vital-sub {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-bottom: 10px;
+  }
+
+  .vital-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+  }
+
+  .vital-date {
+    font-size: 11px;
+    color: var(--text-4);
+  }
+
+  /* FLIGHTS */
+  .flight-empty {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-4);
+    font-size: 13px;
+  }
+
+  .flight-completed-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-4);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 0 14px;
+  }
+
+  .flight-item {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .flight-item:last-child { border-bottom: none; }
+
+  .flight-icon { color: var(--muted); font-size: 18px; text-align: center; }
+  .flight-icon.upcoming { color: var(--blue); }
+  .flight-icon.completed { color: var(--text-4); }
+
+  .flight-main {}
+
+  .flight-route {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .flight-airport {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 1px;
+  }
+
+  .flight-arrow { color: var(--text-4); font-size: 12px; }
+
+  .flight-airline {
+    font-size: 13px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  .flight-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-4);
+  }
+
+  .flight-ref { font-weight: 600; color: var(--text-3); }
+
+  .flight-status-pill {
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .pill-upcoming { background: var(--blue-light); color: var(--blue); }
+  .pill-completed { background: var(--surface2); color: var(--text-4); }
+
+  .flight-right { text-align: right; }
+
+  .flight-time {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .flight-date {
+    font-size: 12px;
+    color: var(--text-3);
+    font-weight: 500;
+  }
+
+  /* PRASÓWKA */
+  .prasowka-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .prasowka-col {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .prasowka-col:first-child {
+    border-right: 1px solid var(--border);
+  }
+
+  .prasowka-scroll {
+    max-height: 280px;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .prasowka-scroll::-webkit-scrollbar { width: 4px; }
+  .prasowka-scroll::-webkit-scrollbar-track { background: transparent; }
+  .prasowka-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .prasowka-footer {
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    margin-top: 10px;
+    text-align: right;
+  }
+
+  .btn-more {
+    font-size: 11px;
+    color: var(--blue);
+    background: none;
+    border: 1px solid var(--blue-light);
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font);
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.15s;
+  }
+
+  .btn-more:hover { background: var(--blue-light); }
+
+  .prasowka-col-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 14px;
+  }
+
+  .prasowka-placeholder {
+    background: var(--blue-light);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #1e40af;
+    line-height: 1.5;
+  }
+
+  .prasowka-placeholder strong { font-weight: 700; }
+
+  /* MAIL ITEMS */
+  .mail-item {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mail-item:last-child { border-bottom: none; }
+
+  .mail-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-2);
+    flex-shrink: 0;
+  }
+
+  .mail-sender {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .mail-subject {
+    font-size: 13px;
+    color: var(--text-2);
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 340px;
+  }
+
+  .mail-snippet {
+    font-size: 11px;
+    color: var(--text-4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 340px;
+    margin-bottom: 6px;
+  }
+
+  .mail-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mail-category {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: var(--surface2);
+    color: var(--text-3);
+    border: 1px solid var(--border);
+  }
+
+  .mail-date { font-size: 11px; color: var(--text-4); }
+
+  /* SKELETON */
+  .skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .row-2 { grid-template-columns: 1fr; }
+    .prasowka-grid { grid-template-columns: 1fr; }
+    .prasowka-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="brand">JFKGLab</span>
+    <span class="sep">/</span>
+    <span class="page">FREYA</span>
+    <span class="sep">|</span>
+    <span>Personal Life Dashboard</span>
+  </div>
+  <div class="topbar-right">
+    <span class="clock" id="clock">--:--:--</span>
+    <span class="updated" id="updated">Odświeżono: --:--</span>
+    <button class="btn-refresh" id="refreshBtn" onclick="loadAll()">
+      <span id="refresh-icon">↻</span> Odśwież
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- ROW 1: Vitals + Loty -->
+  <div class="row row-2">
+
+    <!-- STATUS ZDROWOTNY -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">❤️ Status Zdrowotny</div>
+        <div class="card-head-right" id="vitals-status">aktualne</div>
+      </div>
+      <div class="card-body">
+        <div class="vitals-grid" id="vitals-container">
+          <div class="skeleton" style="height:110px"></div>
+          <div class="skeleton" style="height:110px"></div>
+          <div class="skeleton" style="height:110px"></div>
+          <div class="skeleton" style="height:110px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NADCHODZĄCE LOTY -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-head-left">✈️ Nadchodzące Loty</div>
+        <div class="card-head-right" id="flights-status">ładowanie</div>
+      </div>
+      <div class="card-body" id="flights-container">
+        <div class="skeleton" style="height:80px"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 2: System Health -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-left">🔧 Stan Systemu</div>
+      <div class="card-head-right" id="health-status">ładowanie</div>
+    </div>
+    <div class="card-body">
+      <div id="health-container" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+        <div class="skeleton" style="height:48px"></div>
+        <div class="skeleton" style="height:48px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ćwiczenia dziś -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-left">🏋️ Ćwiczenia dziś</div>
+      <div class="card-head-right" id="cwicz-status">cel 100/dzień</div>
+    </div>
+    <div class="card-body" id="cwicz-container">
+      <div class="skeleton" style="height:48px"></div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Prasówka -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-left">📰 Prasówka</div>
+      <div class="card-head-right">artykuły + aktywność</div>
+    </div>
+    <div class="prasowka-grid">
+      <div class="prasowka-col">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="prasowka-col-title" style="margin-bottom:0">🤖 Prasówka AI + Kariera</div>
+          <button onclick="generatePrasowka()" id="btn-prasowka" style="background:var(--blue);color:#fff;border:none;padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);">↻ Odśwież</button>
+        </div>
+        <div class="prasowka-scroll">
+          <div id="prasowka-container">
+            <div class="prasowka-placeholder">Kliknij <strong>Generuj</strong> — Claude przeszuka web i napisze prasówkę z komentarzem specjalnie dla Ciebie.</div>
+          </div>
+        </div>
+        <div class="prasowka-footer">
+          <button class="btn-more" onclick="openPrasowkaWindow()">Więcej →</button>
+        </div>
+      </div>
+      <div class="prasowka-col">
+        <div class="prasowka-col-title">📧 Ważne Maile</div>
+        <div class="prasowka-scroll">
+          <div id="mails-container">
+            <div class="skeleton" style="height:60px;margin-bottom:10px"></div>
+            <div class="skeleton" style="height:60px"></div>
+          </div>
+        </div>
+        <div class="prasowka-footer">
+          <button class="btn-more" onclick="openMailsWindow()">Więcej →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://hsblsqbvujmdrpcncimd.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzYmxzcWJ2dWptZHJwY25jaW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDU5NzgsImV4cCI6MjA4MDQyMTk3OH0.0QnK1cyie7Q5n1rEshZ_VZsV3Y55jaALJZUOA6kO7Oc';
+  // ANTHROPIC_KEY removed - prasówka generowana przez n8n
+  // GEMINI_KEY removed
+  // OPENAI_KEY removed
+
+  const H = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+  };
+
+  async function sb(table, params = '') {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, { headers: H });
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  }
+
+  function hoursAgo(d) {
+    if (!d) return 9999;
+    return (Date.now() - new Date(d)) / 3600000;
+  }
+
+  function fmtH(h) {
+    if (h > 9990) return '—';
+    if (h < 1) return Math.round(h * 60) + ' min';
+    return Math.round(h) + 'h';
+  }
+
+  function status(h, w, e) {
+    if (h > 9990) return 'nodata';
+    if (h >= e) return 'error';
+    if (h >= w) return 'warn';
+    return 'ok';
+  }
+
+  function fmtDate(d) {
+    if (!d) return '';
+    return new Date(d).toLocaleString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function fmtDateShort(d) {
+    if (!d) return '';
+    const dt = new Date(d);
+    const now = new Date();
+    const isToday = dt.toDateString() === now.toDateString();
+    if (isToday) return dt.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+    return dt.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' }) + ', ' +
+           dt.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function senderInitial(sender) {
+    const m = sender.match(/^([^<\s]+)/);
+    return m ? m[1].charAt(0).toUpperCase() : '?';
+  }
+
+  function senderName(sender) {
+    const m = sender.match(/^(.+?)\s*</);
+    if (m) return m[1].trim();
+    return sender.split('@')[0];
+  }
+
+  // VITALS
+  async function loadVitals() {
+    try {
+      const evs = await sb('life_events', 'select=event_type,event_time,metadata&order=event_time.desc&limit=200');
+      const last = {}, meta = {};
+      for (const e of evs) {
+        if (!last[e.event_type]) { last[e.event_type] = e.event_time; meta[e.event_type] = e.metadata; }
+      }
+
+      const cfg = [
+        { key: 'rybelsus_taken',        icon: '💊', name: 'Rybelsus',    sub: 'od dawki',    w: 16, e: 22 },
+        { key: 'ostomy_bag_changed',     icon: '🦘', name: 'Worek',      sub: 'od zmiany',   w: 48, e: 54 },
+        { key: 'blood_pressure_measured',icon: '❤️', name: 'Ciśnienie',  sub: 'od pomiaru',  w: 48, e: 54 },
+        { key: 'cholesterol_med_taken',  icon: '💉', name: 'Cholesterol', sub: 'od tabletki', w: 23, e: 29 }
+      ];
+
+      let hasError = false, hasWarn = false;
+
+      const html = cfg.map(c => {
+        const h = hoursAgo(last[c.key]);
+        const s = status(h, c.w, c.e);
+        if (s === 'error') hasError = true;
+        if (s === 'warn') hasWarn = true;
+
+        const badgeText = { ok: 'OK', warn: 'UWAGA', error: 'PRZEKROCZONE', nodata: 'BRAK' }[s];
+
+        let extraInfo = '';
+        if (c.key === 'blood_pressure_measured' && meta[c.key]) {
+          try {
+            const m = typeof meta[c.key] === 'string' ? JSON.parse(meta[c.key]) : meta[c.key];
+            if (m?.systolic) extraInfo = `<div class="vital-date">${m.systolic}/${m.diastolic} mmHg${m.pulse ? ' · ' + m.pulse + ' bpm' : ''}</div>`;
+          } catch(e) {}
+        }
+
+        return `<div class="vital ${s}">
+          <div class="vital-top">
+            <div class="vital-name">${c.icon} ${c.name}</div>
+            <span class="vital-badge ${s}">${badgeText}</span>
+          </div>
+          <div class="vital-value">${h > 9990 ? '—' : fmtH(h)}</div>
+          <div class="vital-sub">${c.sub}</div>
+          <div class="vital-divider"></div>
+          ${last[c.key] ? `<div class="vital-date">${fmtDate(last[c.key])}</div>` : '<div class="vital-date">brak danych</div>'}
+          ${extraInfo}
+        </div>`;
+      }).join('');
+
+      document.getElementById('vitals-container').innerHTML = html;
+      document.getElementById('vitals-status').textContent =
+        hasError ? '⚠️ wymaga uwagi' : hasWarn ? '⚠️ uwaga' : 'aktualne';
+    } catch(e) {
+      document.getElementById('vitals-container').innerHTML = '<p style="color:#9ca3af;font-size:13px;padding:20px">Błąd połączenia</p>';
+    }
+  }
+
+  // FLIGHTS
+  async function loadFlights() {
+    try {
+      const flights = await sb('freya_flights',
+        'select=flight_number,origin,destination,departure_date,departure_time,airline,booking_ref,status&order=departure_date.asc');
+
+      const upcoming = flights.filter(f => f.status === 'upcoming');
+      const completed = flights.filter(f => f.status === 'completed');
+      const c = document.getElementById('flights-container');
+      const s = document.getElementById('flights-status');
+
+      if (flights.length === 0) {
+        c.innerHTML = '<div class="flight-empty">Brak zaplanowanych lotów</div>';
+        s.textContent = '0 nadchodzących';
+        return;
+      }
+
+      s.textContent = `${upcoming.length} nadchodzących`;
+
+      let html = '';
+
+      if (upcoming.length === 0) {
+        c.innerHTML = '<div class="flight-empty">Brak nadchodzących lotów</div>';
+        return;
+      }
+
+      const all = upcoming;
+      const isCompleted = false;
+
+      html += all.map(f => {
+        const time = (f.departure_time || '').substring(0, 5);
+        const depDate = f.departure_date ? new Date(f.departure_date) : null;
+        const dateStr = depDate
+          ? depDate.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })
+          : '—';
+        const iconClass = isCompleted ? 'completed' : 'upcoming';
+        const pillClass = isCompleted ? 'pill-completed' : 'pill-upcoming';
+        const pillText = isCompleted ? 'ZREALIZOWANY' : 'UPCOMING';
+        const airlineName = f.airline && f.airline !== 'Nieznana linia' ? f.airline : '';
+
+        return `<div class="flight-item">
+          <div class="flight-icon ${iconClass}">✈</div>
+          <div class="flight-main">
+            <div class="flight-route">
+              <span class="flight-airport">${f.origin || '?'}</span>
+              <span class="flight-arrow">→</span>
+              <span class="flight-airport">${f.destination || '?'}</span>
+              ${airlineName ? `<span class="flight-airline">${airlineName}</span>` : ''}
+              <span class="flight-airline" style="color:var(--blue);font-weight:600">${f.flight_number || ''}</span>
+            </div>
+            <div class="flight-meta">
+              <span class="flight-ref">${f.booking_ref || ''}</span>
+              <span>${time}</span>
+              <span class="flight-status-pill ${pillClass}">${pillText}</span>
+            </div>
+          </div>
+          <div class="flight-right">
+            <div class="flight-date">${dateStr}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      c.innerHTML = html;
+    } catch(e) {
+      document.getElementById('flights-container').innerHTML = '<div class="flight-empty">Błąd połączenia</div>';
+    }
+  }
+
+  // MAILS
+  async function loadMails() {
+    try {
+      const mails = await sb('freya_mails',
+        'select=sender,subject,snippet,category,received_at&order=received_at.desc&limit=8');
+
+      if (!mails || mails.length === 0) {
+        document.getElementById('mails-container').innerHTML =
+          '<p style="color:var(--text-4);font-size:13px;padding:12px 0">Brak ważnych maili</p>';
+        return;
+      }
+
+      document.getElementById('mails-container').innerHTML = mails.map(m => {
+        const name = senderName(m.sender);
+        const initial = senderInitial(m.sender);
+        const cat = (m.category || '').toUpperCase();
+        return `<div class="mail-item">
+          <div class="mail-avatar">${initial}</div>
+          <div>
+            <div class="mail-sender">${name}</div>
+            <div class="mail-subject">${m.subject || ''}</div>
+            <div class="mail-snippet">${m.snippet || ''}</div>
+            <div class="mail-footer">
+              ${cat ? `<span class="mail-category">${cat}</span>` : ''}
+              <span class="mail-date">${fmtDateShort(m.received_at)}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      document.getElementById('mails-container').innerHTML =
+        '<p style="color:var(--text-4);font-size:13px">Błąd połączenia</p>';
+    }
+  }
+
+  // HEALTH CHECK
+  async function loadHealth() {
+    try {
+      const [reminders, logs, mails] = await Promise.all([
+        sb('freya_reminders', 'select=event_type,sent_at&order=sent_at.desc&limit=1'),
+        sb('freya_logs', 'select=workflow_name,executed_at,status&order=executed_at.desc&limit=1'),
+        sb('freya_mails', 'select=received_at&order=received_at.desc&limit=1')
+      ]);
+
+      const rH = hoursAgo(reminders[0]?.sent_at);
+      const lH = hoursAgo(logs[0]?.executed_at);
+      const mH = hoursAgo(mails[0]?.received_at);
+
+      const checks = [
+        { label: 'Freya Przypomnienia', icon: '🔔', h: rH, w: 25, e: 30,
+          detail: reminders[0] ? fmtH(rH) + ' temu' : 'brak danych' },
+        { label: 'Freya Logger', icon: '📋', h: lH, w: 25, e: 48,
+          detail: logs[0] ? fmtH(lH) + ' temu' : 'brak danych' },
+        { label: 'Mail Ogarniaczka', icon: '📧', h: mH, w: 48, e: 96,
+          detail: mails[0] ? 'ostatni ' + fmtH(mH) + ' temu' : 'brak maili' }
+      ];
+
+      let hasError = false, hasWarn = false;
+
+      const html = checks.map(c => {
+        const s = status(c.h, c.w, c.e);
+        if (s === 'error') hasError = true;
+        if (s === 'warn') hasWarn = true;
+
+        const colors = {
+          ok:     { bg: 'var(--green-light)',  border: 'var(--green-border)',  text: 'var(--green)' },
+          warn:   { bg: 'var(--yellow-light)', border: '#fcd34d',              text: 'var(--yellow)' },
+          error:  { bg: 'var(--red-light)',    border: 'var(--red-border)',    text: 'var(--red)' },
+          nodata: { bg: 'var(--surface2)',      border: 'var(--border)',        text: 'var(--muted)' }
+        }[s];
+
+        const label = { ok: 'OK', warn: 'UWAGA', error: 'BŁĄD', nodata: 'BRAK DANYCH' }[s];
+        const icon = { ok: '✅', warn: '⚠️', error: '🚨', nodata: '—' }[s];
+
+        return `<div style="
+          background:${colors.bg};
+          border:1px solid ${colors.border};
+          border-left:3px solid ${colors.text};
+          border-radius:8px;
+          padding:12px 16px;
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+        ">
+          <div style="font-size:13px;font-weight:600;color:var(--text-2)">${icon} ${c.label}</div>
+          <div style="font-size:12px;color:${colors.text};font-weight:600">${label} · ${c.detail}</div>
+        </div>`;
+      }).join('');
+
+      document.getElementById('health-container').innerHTML = html;
+      document.getElementById('health-status').textContent =
+        hasError ? '⚠️ błąd' : hasWarn ? '⚠️ uwaga' : 'wszystko OK';
+    } catch(e) {
+      document.getElementById('health-container').innerHTML =
+        '<p style="color:var(--text-4);font-size:13px">Błąd połączenia</p>';
+    }
+  }
+
+  // ARTICLES (freya_wishlist)
+
+  // ĆWICZENIA (freya_exercise_log)
+  async function loadCwiczenia() {
+    try {
+      const dzis = new Date(Date.now() + 2*3600*1000).toISOString().slice(0,10);
+      const ex = await sb('freya_exercise_log',
+        'select=exercise_type,reps&exercise_date=eq.' + dzis);
+      const sumy = { przysiady: 0, brzuszki: 0 };
+      for (const r of ex) {
+        if (sumy[r.exercise_type] !== undefined) sumy[r.exercise_type] += (r.reps || 0);
+      }
+
+      const bar = (label, emoji, val, cel) => {
+        const pct = Math.min(100, Math.round(val / cel * 100));
+        const done = val >= cel;
+        const col = done ? 'var(--green)' : 'var(--blue)';
+        return `<div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:var(--text-2);margin-bottom:5px">
+            <span>${emoji} ${label}</span>
+            <span style="color:${col}">${val}/${cel}${done ? ' ✅' : ''}</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;height:9px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${col};border-radius:6px;transition:width .4s"></div>
+          </div>
+        </div>`;
+      };
+
+      document.getElementById('cwicz-container').innerHTML =
+        bar('Przysiady', '🦵', sumy.przysiady, 100) +
+        bar('Brzuszki', '🔥', sumy.brzuszki, 100);
+    } catch(e) {
+      document.getElementById('cwicz-container').innerHTML =
+        '<p style="color:var(--text-4);font-size:13px">Błąd połączenia</p>';
+    }
+  }
+
+  // PRASÓWKA — czyta z Supabase
+  async function generatePrasowka() {
+    const btn = document.getElementById('btn-prasowka');
+    const container = document.getElementById('prasowka-container');
+    btn.textContent = '⏳ Ładuję...';
+    btn.disabled = true;
+
+    try {
+      const articles = await sb('freya_prasowka',
+        'select=title,source,url,category,comment,generated_at&order=generated_at.desc&limit=20');
+
+      if (!articles || articles.length === 0) {
+        container.innerHTML = '<div class="prasowka-placeholder">Brak prasówki — workflow wygeneruje ją dziś o 7:00 rano. Możesz też uruchomić workflow ręcznie w n8n.</div>';
+        btn.textContent = '↻ Odśwież'; btn.disabled = false;
+        return;
+      }
+
+      const aiArt = articles.filter(a => a.category === 'ai');
+      const karArt = articles.filter(a => a.category === 'kariera');
+      const genAt = new Date(articles[0].generated_at).toLocaleString('pl-PL', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      });
+
+      function render(list) {
+        if (!list.length) return '<div style="color:var(--text-4);font-size:12px;padding:8px 0">Brak artykułów</div>';
+        return list.map(a => `
+          <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+            <a href="${a.url}" target="_blank" style="font-size:13px;font-weight:600;color:var(--blue);text-decoration:none;line-height:1.4;display:block;margin-bottom:3px">${a.title}</a>
+            <div style="font-size:11px;color:var(--text-4);margin-bottom:6px;font-weight:500">${a.source}</div>
+            <div style="font-size:12px;color:var(--text-2);line-height:1.5;background:var(--surface2);padding:8px 10px;border-radius:6px;border-left:3px solid var(--blue)">💬 ${a.comment}</div>
+          </div>`).join('');
+      }
+
+      container.innerHTML = `
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);margin-bottom:8px">🤖 AI & Automatyzacja</div>
+        ${render(aiArt)}
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);margin:14px 0 8px">🎯 Kariera & Rozwój</div>
+        ${render(karArt)}
+        <div style="font-size:10px;color:var(--text-4);margin-top:12px;text-align:right">Wygenerowano: ${genAt}</div>
+      `;
+
+    } catch(e) {
+      container.innerHTML = '<div class="prasowka-placeholder" style="color:var(--red)">Błąd połączenia z Supabase.</div>';
+    }
+
+    btn.textContent = '↻ Odśwież'; btn.disabled = false;
+  }
+
+
+  function openPrasowkaWindow() {
+    const html = document.getElementById('prasowka-container').innerHTML;
+    const w = window.open('', '_blank', 'width=700,height=800,scrollbars=yes');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+      <title>Prasówka AI — JFKGLab</title>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+      <style>
+        body { font-family: Inter, sans-serif; padding: 24px; background: #f0f2f7; color: #111827; max-width: 660px; margin: 0 auto; }
+        h2 { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #374151; }
+        a { color: #2563eb; }
+        div { line-height: 1.6; }
+      </style>
+      </head><body><h2>🤖 Prasówka AI + Kariera</h2>${html}</body></html>`);
+    w.document.close();
+  }
+
+  function openMailsWindow() {
+    const html = document.getElementById('mails-container').innerHTML;
+    const w = window.open('', '_blank', 'width=700,height=800,scrollbars=yes');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+      <title>Ważne Maile — JFKGLab</title>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+      <style>
+        body { font-family: Inter, sans-serif; padding: 24px; background: #f0f2f7; color: #111827; max-width: 660px; margin: 0 auto; }
+        h2 { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: #374151; }
+        .mail-item { display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid #e4e8f0; }
+        .mail-avatar { width:36px;height:36px;border-radius:50%;background:#f7f8fc;border:1px solid #e4e8f0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700; }
+        .mail-sender { font-size:13px;font-weight:700; }
+        .mail-subject { font-size:13px;color:#374151; }
+        .mail-snippet { font-size:11px;color:#9ca3af; }
+        .mail-category { font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#f7f8fc;border:1px solid #e4e8f0;text-transform:uppercase; }
+        .mail-date { font-size:11px;color:#9ca3af; }
+        .mail-footer { display:flex;align-items:center;gap:8px;margin-top:4px; }
+      </style>
+      </head><body><h2>📧 Ważne Maile</h2>${html}</body></html>`);
+    w.document.close();
+  }
+
+  async function loadArticles() {
+    try {
+      const items = await sb('freya_wishlist',
+        "select=title,author_director,category,status&eq.category=artykuł&eq.status=chcę&order=created_at.desc&limit=8");
+
+      if (!items || items.length === 0) {
+        document.getElementById('prasowka-container').innerHTML =
+          `<div class="prasowka-placeholder">
+            Tabela <strong>freya_wishlist</strong> gotowa — artykuły pojawią się tu po zbudowaniu Freya Kolekcjoner.
+          </div>`;
+        return;
+      }
+
+      document.getElementById('prasowka-container').innerHTML = items.map(i =>
+        `<div style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${i.title}</div>
+          ${i.author_director ? `<div style="font-size:11px;color:var(--text-4);margin-top:2px">${i.author_director}</div>` : ''}
+        </div>`
+      ).join('');
+    } catch(e) {
+      document.getElementById('prasowka-container').innerHTML =
+        `<div class="prasowka-placeholder">
+          Tabela <strong>freya_wishlist</strong> gotowa — artykuły pojawią się tu po zbudowaniu Freya Kolekcjoner.
+        </div>`;
+    }
+  }
+
+  function updateClock() {
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  async function loadAll() {
+    const btn = document.getElementById('refreshBtn');
+    btn.classList.add('loading');
+    document.getElementById('refresh-icon').textContent = '⟳';
+    await Promise.all([loadVitals(), loadFlights(), loadHealth(), loadMails(), loadCwiczenia()]);
+    btn.classList.remove('loading');
+    document.getElementById('refresh-icon').textContent = '↻';
+    document.getElementById('updated').textContent = 'Odświeżono: ' +
+      new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  setInterval(updateClock, 1000);
+  updateClock();
+  loadAll();
+  generatePrasowka(); // prasówka ładuje się raz przy starcie, potem tylko przez przycisk ↻ Odśwież
+  setInterval(loadAll, 5 * 60 * 1000);
+</script>
+</body>
+</html>

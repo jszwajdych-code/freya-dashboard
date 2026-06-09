@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FREYA — Widget</title>
+<style>
+  :root {
+    --bg: #f4f6fb; --card: #ffffff; --ink: #1a2235; --muted: #8a93a8;
+    --blue: #2f6df0; --green: #1ea672; --amber: #d98b16; --red: #d8453a; --line: #e6eaf2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: var(--bg); font-family: -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .wrap { padding: 14px; display: flex; flex-direction: column; gap: 9px; min-height: 100vh; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; }
+  .brand { font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--blue); }
+  .time { font-size: 11px; color: var(--muted); }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 15px; display: flex; align-items: center; gap: 12px; }
+  .tile .ico { font-size: 20px; line-height: 1; }
+  .tile .body { flex: 1; min-width: 0; }
+  .tile .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; }
+  .tile .value { font-size: 17px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .v-green { color: var(--green); } .v-amber { color: var(--amber); } .v-red { color: var(--red); }
+  .tile .sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .dot.ok { background: var(--green); } .dot.warn { background: var(--amber); } .dot.err { background: var(--red); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="brand">FREYA</div>
+    <div class="time" id="time">--:--</div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">🦘</div>
+    <div class="body">
+      <div class="label">Worek — ostatnia zmiana</div>
+      <div class="value" id="bag">ładowanie…</div>
+    </div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">🔵</div>
+    <div class="body">
+      <div class="label">Rybelsus</div>
+      <div class="value" id="ryb">ładowanie…</div>
+    </div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">💊</div>
+    <div class="body">
+      <div class="label">Tabletki (cholesterol)</div>
+      <div class="value" id="chol">ładowanie…</div>
+    </div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">🍴</div>
+    <div class="body">
+      <div class="label">Ostatni posiłek</div>
+      <div class="value" id="meal">ładowanie…</div>
+    </div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">❤️</div>
+    <div class="body">
+      <div class="label">Ciśnienie — ostatni pomiar</div>
+      <div class="value" id="bp">ładowanie…</div>
+      <div class="sub" id="bp-sub"></div>
+    </div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">🏋️</div>
+    <div class="body">
+      <div class="label">Ćwiczenia dziś</div>
+      <div class="value" id="cwicz">ładowanie…</div>
+    </div>
+  </div>
+
+  <div class="tile">
+    <div class="ico">🔧</div>
+    <div class="body">
+      <div class="label">Stan systemu</div>
+      <div class="value" id="sys">ładowanie…</div>
+    </div>
+    <div class="dot" id="sys-dot"></div>
+  </div>
+</div>
+
+<script>
+  const SB_URL = 'https://hsblsqbvujmdrpcncimd.supabase.co';
+  const SB_KEY = 'TWOJ_ANON_KEY';   // <-- wklej anon key z Supabase (ten sam co w dashboardzie)
+
+  async function sb(table, query) {
+    const res = await fetch(SB_URL + '/rest/v1/' + table + '?' + query, {
+      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+  function hoursAgo(d) { if (!d) return 9999; return (Date.now() - new Date(d)) / 3600000; }
+  function fmtAgo(h) {
+    if (h > 9990) return 'brak danych';
+    if (h < 1) return Math.round(h * 60) + ' min temu';
+    if (h < 48) return Math.round(h) + 'h temu';
+    return Math.round(h / 24) + ' dni temu';
+  }
+  function setTile(id, h, warn, err) {
+    const el = document.getElementById(id);
+    el.textContent = fmtAgo(h);
+    el.className = 'value ' + (h >= err ? 'v-red' : h >= warn ? 'v-amber' : 'v-green');
+  }
+
+  async function loadEvent(table, query, id, warn, err) {
+    try {
+      const r = await sb(table, query);
+      const ts = r[0]?.event_time || r[0]?.created_at;
+      setTile(id, hoursAgo(ts), warn, err);
+    } catch(e) { document.getElementById(id).textContent = 'błąd'; }
+  }
+
+  function strefaSkrot() {
+    try {
+      const parts = new Intl.DateTimeFormat('pl-PL', { hour: '2-digit', timeZoneName: 'short' })
+        .formatToParts(new Date());
+      const tz = parts.find(p => p.type === 'timeZoneName');
+      return tz ? tz.value : '';
+    } catch(e) { return ''; }
+  }
+
+  async function load() {
+    const godz = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('time').textContent = (godz + ' ' + strefaSkrot()).trim();
+
+    // progi z eskalacji: worek 48/60, rybelsus 16/22, cholesterol 23/29, posiłek 4/6
+    loadEvent('life_events', 'select=event_time&event_type=eq.ostomy_bag_changed&order=event_time.desc&limit=1', 'bag', 48, 60);
+    loadEvent('life_events', 'select=event_time&event_type=eq.rybelsus_taken&order=event_time.desc&limit=1', 'ryb', 16, 22);
+    loadEvent('life_events', 'select=event_time&event_type=eq.cholesterol_med_taken&order=event_time.desc&limit=1', 'chol', 23, 29);
+    loadEvent('meal_log', 'select=created_at&order=created_at.desc&limit=1', 'meal', 4, 6);
+
+    // Ciśnienie — pokazuje wartość z metadata + jak dawno
+    try {
+      const bp = await sb('life_events',
+        'select=event_time,metadata&event_type=eq.blood_pressure_measured&order=event_time.desc&limit=1');
+      if (bp[0]) {
+        const m = bp[0].metadata || {};
+        const sys = m.systolic, dia = m.diastolic, puls = m.pulse;
+        document.getElementById('bp').textContent =
+          (sys && dia) ? `${sys}/${dia}` : '—';
+        const ago = fmtAgo(hoursAgo(bp[0].event_time));
+        document.getElementById('bp-sub').textContent =
+          (puls ? `puls ${puls} · ` : '') + ago;
+      } else {
+        document.getElementById('bp').textContent = 'brak danych';
+      }
+    } catch(e) { document.getElementById('bp').textContent = 'błąd'; }
+
+    // Ćwiczenia dziś — suma przysiadów i brzuszków
+    try {
+      const dzis = new Date(Date.now() + 2*3600*1000).toISOString().slice(0,10);
+      const ex = await sb('freya_exercise_log',
+        'select=exercise_type,reps&exercise_date=eq.' + dzis);
+      const sumy = { przysiady: 0, brzuszki: 0 };
+      for (const r of ex) {
+        if (sumy[r.exercise_type] !== undefined) sumy[r.exercise_type] += (r.reps || 0);
+      }
+      document.getElementById('cwicz').textContent =
+        `🦵 ${sumy.przysiady}/100  🔥 ${sumy.brzuszki}/100`;
+    } catch(e) { document.getElementById('cwicz').textContent = 'błąd'; }
+
+    // Stan systemu — ostatni log
+    try {
+      const l = await sb('freya_logs', 'select=executed_at&order=executed_at.desc&limit=1');
+      const h = hoursAgo(l[0]?.executed_at);
+      document.getElementById('sys').textContent =
+        h > 9990 ? 'brak danych' : 'OK · ' + fmtAgo(h);
+      document.getElementById('sys-dot').className = 'dot ' + (h > 9990 ? 'err' : h >= 6 ? 'warn' : 'ok');
+    } catch(e) {
+      document.getElementById('sys').textContent = 'błąd';
+      document.getElementById('sys-dot').className = 'dot err';
+    }
+  }
+
+  load();
+  setInterval(load, 5 * 60 * 1000);
+</script>
+</body>
+</html>
