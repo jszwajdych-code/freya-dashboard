@@ -94,7 +94,7 @@
 
 <script>
   const SB_URL = 'https://hsblsqbvujmdrpcncimd.supabase.co';
-  const SB_KEY = 'TWOJ_ANON_KEY';   // <-- wklej anon key z Supabase (ten sam co w dashboardzie)
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzYmxzcWJ2dWptZHJwY25jaW1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDU5NzgsImV4cCI6MjA4MDQyMTk3OH0.0QnK1cyie7Q5n1rEshZ_VZsV3Y55jaALJZUOA6kO7Oc';   // <-- wklej anon key z Supabase (ten sam co w dashboardzie)
 
   async function sb(table, query) {
     const res = await fetch(SB_URL + '/rest/v1/' + table + '?' + query, {
